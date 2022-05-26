@@ -15,6 +15,15 @@ class NearbyStop extends StatefulWidget {
     if (searchValue.contains("站")) {
       searchValue = searchValue.replaceAll("站", "");
     }
+    if (searchValue == "大葉") {
+      searchValue = "大葉大學";
+    }
+    if (searchValue == "員林") {
+      searchValue = "員林客運";
+    }
+    if (searchValue == "彰化") {
+      searchValue = "彰化站";
+    }
   }
 
   String searchValue;
@@ -31,6 +40,11 @@ class _NearbyStop extends State<NearbyStop> {
   late final Stream<int> positionStream;
   late String message;
   late List<NearbyWidget> nearbyStops;
+  /**
+   * 0 -> nearbyStops is empty
+   * 1 -> no found
+   */
+  int? searchStatus;
 
   @override
   void initState() {
@@ -74,6 +88,7 @@ class _NearbyStop extends State<NearbyStop> {
 
   getNearbyStops() {
     if (position == null) {
+      searchStatus = 0;
       return [
         Center(
           child: Text(
@@ -91,6 +106,7 @@ class _NearbyStop extends State<NearbyStop> {
             (stop.getStopName["zh_tw"]!.contains("管院") &&
                 widget.searchValue.contains("大葉大學"))) {
           contain = stop;
+
           break;
         }
       }
@@ -108,8 +124,13 @@ class _NearbyStop extends State<NearbyStop> {
 
           distance = double.parse(distance.toStringAsFixed(1));
 
-          if (distance < 1.5) {
-            if (bus.getStops.indexOf(stop) < bus.getStops.indexOf(contain)) {
+          if (distance < BusApp.nearbyDistance) {
+            searchStatus = 1;
+            List<Stop> stops = (bus.getDirection == 0 && bus.getProvider)
+                ? bus.getStops.reversed.toList()
+                : bus.getStops;
+
+            if (stops.indexOf(stop) < stops.indexOf(contain)) {
               var table = RouteData.rotueBarTimeTables[
                   bus.getRouteId + bus.getSubtitle["zh_tw"]!];
 
@@ -132,6 +153,7 @@ class _NearbyStop extends State<NearbyStop> {
                 NearbyWidget nearbyWidget = NearbyWidget(
                   bus: bus,
                   stopName: stop.getStopName["zh_tw"]!,
+                  decStopName: contain.getStopName["zh_tw"]!,
                   distance: distance,
                   arrTime: arrTimeStringFormat,
                 );
@@ -142,6 +164,11 @@ class _NearbyStop extends State<NearbyStop> {
           }
         }
       }
+    }
+
+    if (nearbyStops.isEmpty && searchStatus == null) {
+      searchStatus = 0;
+      return;
     }
 
     nearbyStops.sort(((a, b) {
@@ -165,6 +192,26 @@ class _NearbyStop extends State<NearbyStop> {
     return "位置取得時發生未知錯誤，請聯絡開發者。";
   }
 
+  Widget getEmptyReason(String searchValue) {
+    switch (searchStatus) {
+      case 0:
+        return Text(
+          "您周圍 ${BusApp.nearbyDistance} 公里內找不到目的地為 \"$searchValue\" 的途經公車。",
+          style: TextStyle(
+            fontSize: 20,
+          ),
+        );
+      case 1:
+        return Text(
+          "找不到有關於 \" $searchValue \" 的目的地。",
+          style: TextStyle(
+            fontSize: 20,
+          ),
+        );
+    }
+    return Text("");
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<int>(
@@ -182,15 +229,19 @@ class _NearbyStop extends State<NearbyStop> {
                             height: 300,
                           ),
                           Center(
-                            child: Text(
-                              "您周圍 1.5 公里無公車會經過的站牌。",
-                              style: TextStyle(
-                                fontSize: 22,
-                              ),
-                            ),
+                            child: getEmptyReason(widget.searchValue),
                           )
                         ]
-                      : nearbyStops,
+                      : [
+                          SizedBox(
+                            height: 20,
+                          ),
+                          Text(
+                            "搜尋 \"${widget.searchValue}\" 的結果如下 :",
+                            style: TextStyle(fontSize: 20),
+                          ),
+                          ...nearbyStops
+                        ],
                 ),
               ),
             ),
@@ -244,12 +295,14 @@ class NearbyWidget extends StatefulWidget {
     Key? key,
     required this.bus,
     required this.stopName,
+    required this.decStopName,
     required this.distance,
     required this.arrTime,
   }) : super(key: key);
 
   final BusRoute bus;
   final String stopName;
+  final String decStopName;
   final double distance;
   final String arrTime;
 
@@ -260,67 +313,71 @@ class NearbyWidget extends StatefulWidget {
 class _NearbyWidgetState extends State<NearbyWidget> {
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(
-          color: BusApp.mainColor,
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+            color: BusApp.mainColor,
+          ),
+          borderRadius: BorderRadius.all(Radius.circular(12)),
         ),
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-      ),
-      child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BusRoutePage(
-              thisPageBusRoute: widget.bus,
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BusRoutePage(
+                thisPageBusRoute: widget.bus,
+              ),
             ),
           ),
-        ),
-        splashColor: BusApp.splashColor,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: EdgeInsets.only(top: 10, bottom: 10),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 20,
-              ),
-              Expanded(
-                flex: 5,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      widget.bus.getRouteName["zh_tw"]!,
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    Text(
-                      widget.bus.getSubtitle["zh_tw"]!,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey[600],
+          splashColor: BusApp.splashColor,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.only(top: 10, bottom: 10),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                ),
+                Expanded(
+                  flex: 5,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        widget.bus.getRouteName["zh_tw"]!,
+                        style: TextStyle(fontSize: 18),
                       ),
-                    ),
-                  ],
+                      Text(
+                        widget.bus.getSubtitle["zh_tw"]!,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(flex: 1, child: SizedBox()),
-              Expanded(
-                flex: 6,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(BusApp.stopName + widget.stopName),
-                    Text(BusApp.straightDistance +
-                        widget.distance.toString() +
-                        BusApp.kilometer),
-                    Text(BusApp.comeTime + widget.arrTime + BusApp.kilometer),
-                  ],
-                ),
-              )
-            ],
+                Expanded(flex: 1, child: SizedBox()),
+                Expanded(
+                  flex: 6,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(BusApp.stopName + widget.stopName),
+                      Text(BusApp.dec + widget.decStopName),
+                      Text(BusApp.straightDistance +
+                          "${widget.distance}" +
+                          BusApp.kilometer),
+                      Text(BusApp.comeTime + widget.arrTime),
+                    ],
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),

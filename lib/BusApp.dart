@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class BusApp {
   static int currentPage = 0; // default page is 0 (main page)
+  static double nearbyDistance = 1.5;
   static String year = getNow().year.toString();
   static const String appName = "張顧耀老師很帥";
   static const String mainPage = "首頁";
@@ -25,11 +26,12 @@ class BusApp {
   static const String notToday = "當日無行駛";
   static const String nearbyStop = "附近的站點";
   static const String kilometer = " 公里";
-  static const String stopName = "站牌名稱: ";
+  static const String stopName = "附近站牌: ";
   static const String straightDistance = "直線距離: ";
-  static const String comeTime = "直線距離: ";
+  static const String comeTime = "到站時間: ";
+  static const String dec = "目的地: ";
   static const String noFavorite = "尚無任何收藏";
-  static const String noHistory = "尚無任何收藏";
+  static const String noHistory = "尚無任何搜尋紀錄";
 
   static const List<String> day = [
     "星期日",
