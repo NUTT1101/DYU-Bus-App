@@ -226,6 +226,13 @@ class _NearbyStop extends State<NearbyStop> {
                   children: nearbyStops.isEmpty
                       ? [
                           SizedBox(
+                            height: 20,
+                          ),
+                          Text(
+                            "搜尋 \"${widget.searchValue}\" 的結果如下 :",
+                            style: TextStyle(fontSize: 20),
+                          ),
+                          SizedBox(
                             height: 300,
                           ),
                           Center(
