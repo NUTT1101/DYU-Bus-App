@@ -10,21 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 class NearbyStop extends StatefulWidget {
-  NearbyStop({Key? key, required this.searchValue}) : super(key: key) {
-    searchValue = searchValue.trim();
-    if (searchValue.contains("站")) {
-      searchValue = searchValue.replaceAll("站", "");
-    }
-    if (searchValue == "大葉") {
-      searchValue = "大葉大學";
-    }
-    if (searchValue == "員林") {
-      searchValue = "員林客運";
-    }
-    if (searchValue == "彰化") {
-      searchValue = "彰化站";
-    }
-  }
+  NearbyStop({Key? key, required this.searchValue}) : super(key: key);
 
   String searchValue;
 
@@ -33,6 +19,7 @@ class NearbyStop extends StatefulWidget {
 }
 
 class _NearbyStop extends State<NearbyStop> {
+  late String search;
   Position? position;
   late bool gpsEnable;
   late bool hasPermission;
@@ -49,6 +36,9 @@ class _NearbyStop extends State<NearbyStop> {
   @override
   void initState() {
     super.initState();
+
+    search = widget.searchValue;
+    valueFilter();
 
     message = "";
     nearbyStops = [];
@@ -86,6 +76,20 @@ class _NearbyStop extends State<NearbyStop> {
     })();
   }
 
+  void valueFilter() {
+    search = search.trim();
+    if (search.contains("站")) {
+      search = search.replaceAll("站", "");
+    }
+    if (search == "大葉") {
+      search = "大葉大學";
+    }
+
+    if (search == "彰化") {
+      search = "彰化站";
+    }
+  }
+
   getNearbyStops() {
     if (position == null) {
       searchStatus = 0;
@@ -102,9 +106,9 @@ class _NearbyStop extends State<NearbyStop> {
     for (var bus in RouteData.busRoutes) {
       Stop? contain;
       for (var stop in bus.getStops) {
-        if (stop.getStopName["zh_tw"]!.contains(widget.searchValue) ||
+        if (stop.getStopName["zh_tw"]!.contains(search) ||
             (stop.getStopName["zh_tw"]!.contains("管院") &&
-                widget.searchValue.contains("大葉大學"))) {
+                search.contains("大葉大學"))) {
           contain = stop;
 
           break;
@@ -136,7 +140,7 @@ class _NearbyStop extends State<NearbyStop> {
 
               if (table is! DataTable) continue;
 
-              int index = bus.getStops.indexOf(stop);
+              int index = stops.indexOf(stop);
 
               if (table.columns.last == table.columns[index]) continue;
 
@@ -226,13 +230,6 @@ class _NearbyStop extends State<NearbyStop> {
                   children: nearbyStops.isEmpty
                       ? [
                           SizedBox(
-                            height: 20,
-                          ),
-                          Text(
-                            "搜尋 \"${widget.searchValue}\" 的結果如下 :",
-                            style: TextStyle(fontSize: 20),
-                          ),
-                          SizedBox(
                             height: 300,
                           ),
                           Center(
@@ -274,7 +271,9 @@ class _NearbyStop extends State<NearbyStop> {
                   SizedBox(
                     height: 300,
                   ),
-                  CircularProgressIndicator(),
+                  CircularProgressIndicator(
+                    color: BusApp.mainColor,
+                  ),
                   SizedBox(
                     height: 25,
                   ),
@@ -375,11 +374,11 @@ class _NearbyWidgetState extends State<NearbyWidget> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(BusApp.stopName + widget.stopName),
-                      Text(BusApp.dec + widget.decStopName),
                       Text(BusApp.straightDistance +
                           "${widget.distance}" +
                           BusApp.kilometer),
                       Text(BusApp.comeTime + widget.arrTime),
+                      Text(BusApp.dec + widget.decStopName),
                     ],
                   ),
                 )
