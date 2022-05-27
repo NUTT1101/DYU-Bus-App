@@ -94,38 +94,29 @@ class _SearchLogPage extends State<SearchLogPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Center(
-        child: FractionallySizedBox(
-          widthFactor: 0.85,
-          child: Column(
-            children: widget.history.isNotEmpty
-                ? [
+    return widget.history.isNotEmpty
+        ? SingleChildScrollView(
+            child: Center(
+              child: FractionallySizedBox(
+                widthFactor: 0.85,
+                child: Column(
+                  children: [
                     SizedBox(
                       height: 25,
                     ),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: widget.history.length,
-                      itemBuilder: (context, index) => HistoryBar(
-                        value: widget.history[index],
-                        index: index,
-                      ),
-                    )
-                  ]
-                : [
-                    SizedBox(
-                      height: 300,
-                    ),
-                    Text(
-                      BusApp.noHistory,
-                      style: TextStyle(fontSize: 22),
-                    )
+                    for (var his in widget.history)
+                      HistoryBar(value: his, index: widget.history.indexOf(his))
                   ],
-          ),
-        ),
-      ),
-    );
+                ),
+              ),
+            ),
+          )
+        : Center(
+            child: Text(
+              BusApp.noHistory,
+              style: TextStyle(fontSize: 22),
+            ),
+          );
   }
 }
 

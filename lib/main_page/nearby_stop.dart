@@ -222,21 +222,19 @@ class _NearbyStop extends State<NearbyStop> {
       stream: positionStream,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          return SingleChildScrollView(
-            child: Center(
-              child: FractionallySizedBox(
-                widthFactor: 0.85,
-                child: Column(
-                  children: nearbyStops.isEmpty
-                      ? [
-                          SizedBox(
-                            height: 300,
-                          ),
-                          Center(
-                            child: getEmptyReason(widget.searchValue),
-                          )
-                        ]
-                      : [
+          return (nearbyStops.isEmpty
+              ? Center(
+                  child: FractionallySizedBox(
+                    widthFactor: 0.85,
+                    child: getEmptyReason(widget.searchValue),
+                  ),
+                )
+              : SingleChildScrollView(
+                  child: Center(
+                    child: FractionallySizedBox(
+                      widthFactor: 0.85,
+                      child: Column(
+                        children: [
                           SizedBox(
                             height: 20,
                           ),
@@ -246,10 +244,10 @@ class _NearbyStop extends State<NearbyStop> {
                           ),
                           ...nearbyStops
                         ],
-                ),
-              ),
-            ),
-          );
+                      ),
+                    ),
+                  ),
+                ));
         }
 
         if (snapshot.hasError) {

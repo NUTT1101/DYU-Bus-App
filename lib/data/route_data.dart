@@ -326,78 +326,87 @@ class RouteData {
     return (hour * 3600 + min * 60);
   }
 
+  static getTimeTable(BusRoute bus, int weekday) {
+    List<DataColumn> dataColumns = [];
+
+    for (var stop in bus.getStops) {
+      String stopName = stop.getStopName["zh_tw"]!;
+      dataColumns.add(
+        DataColumn(
+          label: Text(
+            stopName,
+            style: const TextStyle(fontSize: 20),
+          ),
+        ),
+      );
+    }
+
+    if (bus.getProvider && bus.getDirection == 0) {
+      dataColumns = dataColumns.reversed.toList();
+    }
+
+    List<DataRow> rows = [];
+    List<DataCell> cells = [];
+
+    if (bus.getProvider) {
+      for (var timeTable in bus.getTimeTables) {
+        if (timeTable.getServiceDay[weekday]) {
+          cells.add(DataCell(Text(timeTable.getArrivalTime)));
+          String time = timeTable.getArrivalTime;
+
+          while (cells.length < bus.getStops.length) {
+            time = RouteData.getArriveTime(time);
+            cells.add(DataCell(Text(time)));
+          }
+        }
+
+        if (cells.length % bus.getStops.length == 0 && cells.isNotEmpty) {
+          rows.add(DataRow(cells: cells.toList()));
+          cells.clear();
+        }
+      }
+    } else {
+      for (var timeTable in bus.getTimeTables) {
+        if (timeTable.getServiceDay[weekday]) {
+          cells.add(
+            DataCell(
+              Text(
+                timeTable.getArrivalTime,
+                style: TextStyle(
+                    color: timeTable.getArrivalTime == BusApp.noStop
+                        ? Colors.redAccent
+                        : Colors.black),
+              ),
+            ),
+          );
+        }
+
+        if (cells.length % bus.getStops.length == 0 && cells.isNotEmpty) {
+          rows.add(DataRow(cells: cells.toList()));
+          cells.clear();
+        }
+      }
+    }
+
+    DataTable table = DataTable(columns: dataColumns, rows: rows);
+
+    return table.rows.isEmpty
+        ? const Center(
+            child: Text(
+              BusApp.notToday,
+              style: TextStyle(fontSize: 23),
+            ),
+          )
+        : table;
+  }
+
   static _buildColumnAndRow() async {
     await Future.forEach(busRoutes, (bus) {
       bus as BusRoute;
-      List<DataColumn> dataColumns = [];
 
-      for (var stop in bus.getStops) {
-        String stopName = stop.getStopName["zh_tw"]!;
-        dataColumns.add(DataColumn(
-            label: Text(
-          stopName,
-          style: const TextStyle(fontSize: 20),
-        )));
-      }
+      var table = getTimeTable(bus, BusApp.getWeekday());
 
-      if (bus.getProvider && bus.getDirection == 0) {
-        dataColumns = dataColumns.reversed.toList();
-      }
-
-      List<DataRow> rows = [];
-      List<DataCell> cells = [];
-
-      if (bus.getProvider) {
-        for (var timeTable in bus.getTimeTables) {
-          if (timeTable.getServiceDay[BusApp.getWeekday()]) {
-            cells.add(DataCell(Text(timeTable.getArrivalTime)));
-            String time = timeTable.getArrivalTime;
-
-            while (cells.length < bus.getStops.length) {
-              time = getArriveTime(time);
-              cells.add(DataCell(Text(time)));
-            }
-          }
-
-          if (cells.length % bus.getStops.length == 0 && cells.isNotEmpty) {
-            rows.add(DataRow(cells: cells.toList()));
-            cells.clear();
-          }
-        }
-      } else {
-        for (var timeTable in bus.getTimeTables) {
-          if (timeTable.getServiceDay[BusApp.getWeekday()]) {
-            cells.add(
-              DataCell(
-                Text(
-                  timeTable.getArrivalTime,
-                  style: TextStyle(
-                      color: timeTable.getArrivalTime == "此站不停"
-                          ? Colors.redAccent
-                          : Colors.black),
-                ),
-              ),
-            );
-          }
-
-          if (cells.length % bus.getStops.length == 0 && cells.isNotEmpty) {
-            rows.add(DataRow(cells: cells.toList()));
-            cells.clear();
-          }
-        }
-      }
-
-      DataTable table = DataTable(columns: dataColumns, rows: rows);
-
-      rotueBarTimeTables[bus.getRouteId + bus.getSubtitle["zh_tw"]!] =
-          table.rows.isEmpty
-              ? const Center(
-                  child: Text(
-                    "當日無行駛",
-                    style: TextStyle(fontSize: 23),
-                  ),
-                )
-              : table;
+      rotueBarTimeTables[bus.getRouteId + bus.getSubtitle["zh_tw"]!] = table;
     });
   }
 }

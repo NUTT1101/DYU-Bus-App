@@ -65,7 +65,7 @@ class _DynamicRoute extends State<DynamicRoute> {
 
       for (var row in table.rows) {
         String arrTimeStringFormat = (row.cells[index].child as Text).data!;
-        int arrTimeFormat = _getTimeFormat(arrTimeStringFormat);
+        int arrTimeFormat = RouteData.getTimeFormat(arrTimeStringFormat);
 
         if (!(arrTimeFormat > now && now > (arrTimeFormat - 3600))) {
           continue;
@@ -99,16 +99,6 @@ class _DynamicRoute extends State<DynamicRoute> {
     String month = now.month.toString();
     String day = now.day.toString();
     return month + "/" + day + BusApp.day[BusApp.getWeekday()];
-  }
-
-  int _getTimeFormat(String timeStringFormat) {
-    if (!timeStringFormat.contains(":")) return 0;
-
-    var time = timeStringFormat.split(":");
-    int hour = int.parse(time[0]);
-    int min = int.parse(time[1]);
-
-    return (hour * 3600 + min * 60);
   }
 
   @override

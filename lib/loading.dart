@@ -49,19 +49,7 @@ class _LoadingPageState extends State<LoadingPage> {
                 break;
               case ConnectionState.waiting:
                 return Scaffold(
-                  body: Center(
-                      child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(
-                        color: BusApp.mainColor,
-                      ),
-                      SizedBox(
-                        height: 25,
-                      ),
-                      Text(BusApp.loading)
-                    ],
-                  )),
+                  body: Center(child: LoadingWidget()),
                 );
               case ConnectionState.active:
                 break;
@@ -77,5 +65,27 @@ class _LoadingPageState extends State<LoadingPage> {
             ),
           );
         });
+  }
+}
+
+class LoadingWidget extends StatelessWidget {
+  const LoadingWidget({Key? key, this.space = 25}) : super(key: key);
+
+  final double space;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        CircularProgressIndicator(
+          color: BusApp.mainColor,
+        ),
+        SizedBox(
+          height: space,
+        ),
+        Text(BusApp.loading)
+      ],
+    );
   }
 }

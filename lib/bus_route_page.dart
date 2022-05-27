@@ -1,10 +1,14 @@
+import 'dart:async';
+import 'dart:ffi';
+
 import 'package:busapp/BusApp.dart';
 
 import 'package:busapp/data/route_data.dart';
+import 'package:busapp/loading.dart';
 
 import 'package:busapp/scaffold/appbar.dart';
+import 'package:busapp/webview_page.dart';
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 import 'data/model/bus_route.dart';
 
@@ -21,99 +25,23 @@ class BusRoutePage extends StatefulWidget {
 }
 
 class _BusRoutePageState extends State<BusRoutePage> {
-  Widget? _currentPage;
-  int? _currentPageIndex;
-  String? _weekday;
+  late Widget _currentPage;
+  late int _weekdayIndex;
+  late String _weekday;
 
-  _wantDayTimeTable() {
-    if (_currentPageIndex! > 6) {
-      _currentPageIndex = 0;
-    } else if (_currentPageIndex! < 0) {
-      _currentPageIndex = 6;
+  _checkWeekday() {
+    if (_weekdayIndex > 6) {
+      _weekdayIndex = 0;
+    } else if (_weekdayIndex < 0) {
+      _weekdayIndex = 6;
     }
-
-    List<DataColumn> dataColumns = [];
-
-    for (var stop in widget.thisPageBusRoute.getStops) {
-      String stopName = stop.getStopName["zh_tw"]!;
-      dataColumns.add(DataColumn(
-          label: Text(
-        stopName,
-        style: const TextStyle(fontSize: 20),
-      )));
-    }
-
-    if (widget.thisPageBusRoute.getProvider &&
-        widget.thisPageBusRoute.getDirection == 0) {
-      dataColumns = dataColumns.reversed.toList();
-    }
-
-    List<DataRow> rows = [];
-    List<DataCell> cells = [];
-
-    if (widget.thisPageBusRoute.getProvider) {
-      for (var timeTable in widget.thisPageBusRoute.getTimeTables) {
-        if (timeTable.getServiceDay[_currentPageIndex!]) {
-          cells.add(DataCell(Text(timeTable.getArrivalTime)));
-          String time = timeTable.getArrivalTime;
-
-          while (cells.length < widget.thisPageBusRoute.getStops.length) {
-            time = RouteData.getArriveTime(time);
-            cells.add(DataCell(Text(time)));
-          }
-        }
-
-        if (cells.length % widget.thisPageBusRoute.getStops.length == 0 &&
-            cells.isNotEmpty) {
-          rows.add(DataRow(cells: cells.toList()));
-          cells.clear();
-        }
-      }
-    } else {
-      for (var timeTable in widget.thisPageBusRoute.getTimeTables) {
-        if (timeTable.getServiceDay[_currentPageIndex!]) {
-          cells.add(
-            DataCell(
-              Text(
-                timeTable.getArrivalTime,
-                style: TextStyle(
-                    color: timeTable.getArrivalTime == BusApp.noStop
-                        ? Colors.redAccent
-                        : Colors.black),
-              ),
-            ),
-          );
-        }
-
-        if (cells.length % widget.thisPageBusRoute.getStops.length == 0 &&
-            cells.isNotEmpty) {
-          rows.add(DataRow(cells: cells.toList()));
-          cells.clear();
-        }
-      }
-    }
-
-    DataTable table = DataTable(columns: dataColumns, rows: rows);
-
-    return table.rows.isEmpty
-        ? const Center(
-            child: Text(
-              BusApp.notToday,
-              style: TextStyle(fontSize: 23),
-            ),
-          )
-        : table;
   }
 
   @override
   void initState() {
     super.initState();
-    _currentPage = RouteData.rotueBarTimeTables[
-        widget.thisPageBusRoute.getRouteId +
-            widget.thisPageBusRoute.getSubtitle["zh_tw"]!];
-
-    _currentPageIndex = BusApp.getWeekday();
-    _weekday = BusApp.day[_currentPageIndex!];
+    _weekdayIndex = BusApp.getWeekday();
+    _weekday = BusApp.day[_weekdayIndex];
   }
 
   @override
@@ -179,14 +107,16 @@ class _BusRoutePageState extends State<BusRoutePage> {
                   child: const Icon(Icons.keyboard_arrow_left, size: 35),
                   onTap: () {
                     setState(() {
-                      _currentPageIndex = _currentPageIndex! - 1;
-                      _currentPage = _wantDayTimeTable();
-                      _weekday = BusApp.day[_currentPageIndex!];
+                      _weekdayIndex = _weekdayIndex - 1;
+                      _checkWeekday();
+                      _currentPage = RouteData.getTimeTable(
+                          widget.thisPageBusRoute, _weekdayIndex);
+                      _weekday = BusApp.day[_weekdayIndex];
                     });
                   },
                 ),
                 Text(
-                  _weekday!,
+                  _weekday,
                   style: TextStyle(fontSize: 25),
                 ),
                 GestureDetector(
@@ -196,9 +126,11 @@ class _BusRoutePageState extends State<BusRoutePage> {
                   ),
                   onTap: () {
                     setState(() {
-                      _currentPageIndex = _currentPageIndex! + 1;
-                      _currentPage = _wantDayTimeTable();
-                      _weekday = BusApp.day[_currentPageIndex!];
+                      _weekdayIndex = _weekdayIndex + 1;
+                      _checkWeekday();
+                      _currentPage = RouteData.getTimeTable(
+                          widget.thisPageBusRoute, _weekdayIndex);
+                      _weekday = BusApp.day[_weekdayIndex];
                     });
                   },
                 )
@@ -210,30 +142,44 @@ class _BusRoutePageState extends State<BusRoutePage> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: [_currentPage!],
+                children: [
+                  StreamBuilder(
+                    // immediately invoked function expression. It is so cool!
+                    stream: ((int weekday) {
+                      late final StreamController<int> controller;
+                      controller = StreamController<int>(
+                        onListen: () async {
+                          _currentPage = RouteData.getTimeTable(
+                              widget.thisPageBusRoute, _weekdayIndex);
+                          controller.add(1);
+                          await controller.close();
+                        },
+                      );
+                      return controller.stream;
+                    }(_weekdayIndex)),
+                    builder: ((context, snapshot) {
+                      if (snapshot.hasData) {
+                        return _currentPage;
+                      }
+
+                      switch (snapshot.connectionState) {
+                        case ConnectionState.none:
+                          return Text("none");
+                        case ConnectionState.waiting:
+                          return LoadingWidget();
+                        case ConnectionState.active:
+                          return Text("active");
+                        case ConnectionState.done:
+                          return Text("done");
+                      }
+                    }),
+                  )
+                ],
               ),
             ),
           ]),
         ),
       ),
-    );
-  }
-}
-
-class WebViewPage extends StatefulWidget {
-  WebViewPage({Key? key, required this.url}) : super(key: key);
-  final String url;
-
-  @override
-  State<WebViewPage> createState() => _WebViewPageState();
-}
-
-class _WebViewPageState extends State<WebViewPage> {
-  @override
-  Widget build(BuildContext context) {
-    return WebView(
-      initialUrl: widget.url,
-      javascriptMode: JavascriptMode.unrestricted,
     );
   }
 }

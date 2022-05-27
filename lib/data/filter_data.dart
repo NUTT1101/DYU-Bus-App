@@ -1,11 +1,4 @@
 class FilterData {
-  /* static _getFavorite() {
-    return RouteData.getFavoriteList()
-        .map((e) => e.getRouteName["zh_tw"])
-        .toSet()
-        .toList();
-  } */
-
   static List<String> _getAllRouteName() {
     return ["525", "1688", "6700", "6914", "13路", "校內巡迴專車"];
   }

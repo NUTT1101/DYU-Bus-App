@@ -119,25 +119,22 @@ class _FavoritePageState extends State<FavoritePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Center(
-        child: FractionallySizedBox(
-          widthFactor: 0.9,
-          child: Column(
-            children: _list.isEmpty
-                ? [
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.36,
-                    ),
-                    Text(
-                      BusApp.noFavorite,
-                      style: TextStyle(fontSize: 23),
-                    )
-                  ]
-                : _list,
-          ),
-        ),
-      ),
-    );
+    return _list.isEmpty
+        ? Center(
+            child: Text(
+              BusApp.noFavorite,
+              style: TextStyle(fontSize: 23),
+            ),
+          )
+        : SingleChildScrollView(
+            child: Center(
+              child: FractionallySizedBox(
+                widthFactor: 0.9,
+                child: Column(
+                  children: _list,
+                ),
+              ),
+            ),
+          );
   }
 }

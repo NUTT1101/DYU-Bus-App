@@ -21,7 +21,7 @@ class SearchBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              onPressed: () {},
+              onPressed: () => null,
               icon: const Icon(
                 Icons.search,
                 color: Colors.black,
