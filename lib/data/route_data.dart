@@ -55,7 +55,7 @@ class RouteData {
     await _buildAllStops(); // 這個跑最慢
     await _buildTimeTables();
     await _buildRoutes();
-    await _buildColumnAndRow();
+    await buildColumnAndRow();
     await _buildLocalStorage();
     await _buildAppData();
 
@@ -400,7 +400,7 @@ class RouteData {
         : table;
   }
 
-  static _buildColumnAndRow() async {
+  static buildColumnAndRow() async {
     await Future.forEach(busRoutes, (bus) {
       bus as BusRoute;
 

@@ -33,6 +33,13 @@ class _DynamicRoute extends State<DynamicRoute> {
       setState(() {
         _time = _getTime(_now);
         _comingSoon = _updateComingSoonBus();
+
+        // update
+        if (BusApp.initWeekday != BusApp.getWeekday()) {
+          RouteData.buildColumnAndRow();
+          BusApp.initWeekday = BusApp.getWeekday();
+          _date = _getDate(_now);
+        }
       });
     });
   }
@@ -51,7 +58,8 @@ class _DynamicRoute extends State<DynamicRoute> {
       for (var column in table.columns) {
         Text lable = column.label as Text;
 
-        if (lable.data!.contains("大葉") || lable.data!.contains("管院")) {
+        if ((lable.data!.contains("大葉") && !lable.data!.contains("大葉一舍")) ||
+            lable.data!.contains("管院")) {
           index = table.columns.indexOf(column);
           break;
         }
@@ -152,7 +160,7 @@ class _DynamicRoute extends State<DynamicRoute> {
                 height: 15,
               ),
               SizedBox(
-                height: MediaQuery.of(context).size.height * 0.67,
+                height: MediaQuery.of(context).size.height * 0.65,
                 child: _comingSoon.isNotEmpty
                     ? ListView.builder(
                         shrinkWrap: true,

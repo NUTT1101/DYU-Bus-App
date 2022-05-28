@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class BusApp {
   static int currentPage = 0; // default page is 0 (main page)
   static double nearbyDistance = 1.0;
+  static int initWeekday = getWeekday();
   static String year = getNow().year.toString();
   static const String appName = "張顧耀老師很帥";
   static const String mainPage = "首頁";

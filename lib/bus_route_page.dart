@@ -42,6 +42,9 @@ class _BusRoutePageState extends State<BusRoutePage> {
     super.initState();
     _weekdayIndex = BusApp.getWeekday();
     _weekday = BusApp.day[_weekdayIndex];
+    _currentPage = RouteData.rotueBarTimeTables[
+        widget.thisPageBusRoute.getRouteId +
+            widget.thisPageBusRoute.getSubtitle["zh_tw"]!]!;
   }
 
   @override
@@ -96,88 +99,59 @@ class _BusRoutePageState extends State<BusRoutePage> {
       ),
       body: SingleChildScrollView(
         child: Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const SizedBox(
-              height: 25,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  child: const Icon(Icons.keyboard_arrow_left, size: 35),
-                  onTap: () {
-                    setState(() {
-                      _weekdayIndex = _weekdayIndex - 1;
-                      _checkWeekday();
-                      _currentPage = RouteData.getTimeTable(
-                          widget.thisPageBusRoute, _weekdayIndex);
-                      _weekday = BusApp.day[_weekdayIndex];
-                    });
-                  },
-                ),
-                Text(
-                  _weekday,
-                  style: TextStyle(fontSize: 25),
-                ),
-                GestureDetector(
-                  child: const Icon(
-                    Icons.keyboard_arrow_right,
-                    size: 35,
-                  ),
-                  onTap: () {
-                    setState(() {
-                      _weekdayIndex = _weekdayIndex + 1;
-                      _checkWeekday();
-                      _currentPage = RouteData.getTimeTable(
-                          widget.thisPageBusRoute, _weekdayIndex);
-                      _weekday = BusApp.day[_weekdayIndex];
-                    });
-                  },
-                )
-              ],
-            ),
-            const SizedBox(
-              height: 20,
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                height: 25,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  StreamBuilder(
-                    // immediately invoked function expression. It is so cool!
-                    stream: ((int weekday) {
-                      late final StreamController<int> controller;
-                      controller = StreamController<int>(
-                        onListen: () async {
-                          _currentPage = RouteData.getTimeTable(
-                              widget.thisPageBusRoute, _weekdayIndex);
-                          controller.add(1);
-                          await controller.close();
-                        },
-                      );
-                      return controller.stream;
-                    }(_weekdayIndex)),
-                    builder: ((context, snapshot) {
-                      if (snapshot.hasData) {
-                        return _currentPage;
-                      }
-
-                      switch (snapshot.connectionState) {
-                        case ConnectionState.none:
-                          return Text("none");
-                        case ConnectionState.waiting:
-                          return LoadingWidget();
-                        case ConnectionState.active:
-                          return Text("active");
-                        case ConnectionState.done:
-                          return Text("done");
-                      }
-                    }),
+                  GestureDetector(
+                    child: const Icon(Icons.keyboard_arrow_left, size: 35),
+                    onTap: () {
+                      setState(() {
+                        _weekdayIndex = _weekdayIndex - 1;
+                        _checkWeekday();
+                        _currentPage = RouteData.getTimeTable(
+                            widget.thisPageBusRoute, _weekdayIndex);
+                        _weekday = BusApp.day[_weekdayIndex];
+                      });
+                    },
+                  ),
+                  Text(
+                    _weekday,
+                    style: TextStyle(fontSize: 25),
+                  ),
+                  GestureDetector(
+                    child: const Icon(
+                      Icons.keyboard_arrow_right,
+                      size: 35,
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _weekdayIndex = _weekdayIndex + 1;
+                        _checkWeekday();
+                        _currentPage = RouteData.getTimeTable(
+                            widget.thisPageBusRoute, _weekdayIndex);
+                        _weekday = BusApp.day[_weekdayIndex];
+                      });
+                    },
                   )
                 ],
               ),
-            ),
-          ]),
+              const SizedBox(
+                height: 20,
+              ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [_currentPage],
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
