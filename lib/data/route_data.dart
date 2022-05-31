@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:busapp/BusApp.dart';
 import 'package:busapp/data/model/bus_route.dart';
 import 'package:busapp/data/model/stop.dart';
+import 'package:busapp/data/model/stop_with_position.dart';
 import 'package:busapp/data/model/time_table.dart';
 import 'package:busapp/data/model/slider_bar_data.dart';
 import 'package:crypto/crypto.dart';
@@ -20,6 +21,7 @@ class RouteData {
   static late Map<String, List<Stop>> allRouteStops;
   static late Map<String, List<TimeTable>> totalTimeTables;
   static late List<BusRoute> busRoutes;
+  static late Map<BusRoute, List<StopWithPosition>> busAndStopPosition;
   static late Map<String, Widget> rotueBarTimeTables;
   static late LocalStorage storage;
   static late LocalStorage searchLog;
@@ -40,6 +42,7 @@ class RouteData {
     allRouteStops = {};
     totalTimeTables = {};
     busRoutes = [];
+    busAndStopPosition = {};
     rotueBarTimeTables = {};
     element = [1, 2, 3];
     favoriteController = StreamController<int>.broadcast();
@@ -51,15 +54,24 @@ class RouteData {
     await _getPtx();
     allData = await getJsonFromURL(link);
 
+    var t1 = BusApp.getNow();
     await _buildAllBusName();
-    await _buildAllStops(); // 這個跑最慢
     await _buildTimeTables();
+    await _buildAllStops();
     await _buildRoutes();
     await buildColumnAndRow();
     await _buildLocalStorage();
     await _buildAppData();
+    _buildStopWithPosition();
+    var t2 = BusApp.getNow();
 
-    print("build successful!");
+    var g = ((t2.toUtc().microsecondsSinceEpoch -
+                t1.toUtc().microsecondsSinceEpoch) /
+            1000000)
+        .toStringAsFixed(2);
+
+    print("build successful! $g second(s)");
+
     return true;
   }
 
@@ -75,19 +87,23 @@ class RouteData {
   }
 
   static _buildAppData() async {
-    var data = await getJsonFromURL("https://cnutt.me/d/slider/image.json");
-    data["about_info"].forEach((value) {
-      aboutInfo.add(value);
-    });
+    var data =
+        await getJsonFromURL("https://nutt1101.github.io/data/image.json");
+    if (data != null) {
+      data["about_info"].forEach((value) {
+        aboutInfo.add(value);
+      });
 
-    data["content"].forEach((value) {
-      String image = value["image"];
-      String imageLink = value["link"];
-      String linkTitle = value["title"];
+      data["content"].forEach((value) {
+        String image = value["image"];
+        String imageLink = value["link"];
+        String linkTitle = value["title"];
 
-      SilderBarData silderBarData = SilderBarData(image, imageLink, linkTitle);
-      imageList.add(silderBarData);
-    });
+        SilderBarData silderBarData =
+            SilderBarData(image, imageLink, linkTitle);
+        imageList.add(silderBarData);
+      });
+    }
   }
 
   static List<BusRoute> getFavoriteList() {
@@ -155,46 +171,60 @@ class RouteData {
   static Future<void> _buildAllStops() async {
     await Future.forEach(allData, (allBus) async {
       allBus as Map<String, dynamic>;
-      String url = allBus["url"]["stop_pos"];
+      String url = allBus["url"]["first_time_table"];
+      String routeID = _getRealRouteID(allBus["key"], url);
+      dynamic stops;
 
-      dynamic stopPosition;
       if (url.contains("http://www.ylbus.com.tw/")) {
-        stopPosition = await getJsonFromURL(url);
+        stops = await getJsonFromURL(url);
+
+        stops[0]["Timetables"].forEach((timeTable) {
+          List<Stop> allStops = [];
+
+          timeTable["StopTimes"].forEach((stop) {
+            String stopID = stop["StopID"];
+            Map<String, String> stopName = {
+              "zh_tw": stop["StopName"]["Zh_tw"],
+              "en": stop["StopName"]["En"],
+            };
+
+            Stop buildStop = Stop(
+              id: stopID,
+              stopName: stopName,
+              routeID: routeID,
+            );
+
+            allStops.add(buildStop);
+          });
+
+          allRouteStops[routeID] = allStops;
+        });
       } else {
-        stopPosition = await getJsonFromURL(url, headers: _getSignature());
-      }
+        url = allBus["url"]["est_time"];
+        stops = await getJsonFromURL(url, headers: _getSignature());
 
-      if (stopPosition.toString() == "{message: API rate limit exceeded}") {
-        return;
-      }
-
-      stopPosition.forEach((busStop) {
-        String routeID = busStop["RouteID"];
         List<Stop> allStops = [];
-
-        busStop["Stops"].forEach((stop) {
-          String stopID = stop["StopID"];
+        stops.forEach((stop) {
           Map<String, String> stopName = {
             "zh_tw": stop["StopName"]["Zh_tw"],
             "en": stop["StopName"]["En"],
           };
-          List<double> position = [
-            stop["StopPosition"]["PositionLat"],
-            stop["StopPosition"]["PositionLon"]
-          ];
 
           Stop buildStop = Stop(
-            id: stopID,
+            id: "",
             stopName: stopName,
-            position: position,
             routeID: routeID,
           );
 
           allStops.add(buildStop);
         });
-
         allRouteStops[routeID] = allStops;
-      });
+      }
+
+      if (stops.toString() == "{message: API rate limit exceeded}") {
+        // ptx 平台請求上限滿了
+        return;
+      }
     });
   }
 
@@ -293,7 +323,7 @@ class RouteData {
         subtitle: subtitle,
         direction: direction,
         timeTables: totalTimeTables[timeTableID]!,
-        stops: allRouteStops[routeID == "13" ? "0801" : routeID]!,
+        stops: allRouteStops[routeID]!,
         provider: provider,
         ticket: ticket,
       ));
@@ -407,6 +437,59 @@ class RouteData {
       var table = getTimeTable(bus, BusApp.getWeekday());
 
       rotueBarTimeTables[bus.getRouteId + bus.getSubtitle["zh_tw"]!] = table;
+    });
+  }
+
+  static _buildStopWithPosition() async {
+    await Future.forEach(allData, (allBus) async {
+      allBus as Map<String, dynamic>;
+      String url = allBus["url"]["stop_pos"];
+
+      dynamic stopPosition;
+      if (url.contains("http://www.ylbus.com.tw/")) {
+        stopPosition = await getJsonFromURL(url);
+      } else {
+        stopPosition = await getJsonFromURL(url, headers: _getSignature());
+      }
+
+      if (stopPosition.toString() == "{message: API rate limit exceeded}") {
+        return;
+      }
+
+      String idURL = allBus["url"]["first_time_table"];
+      String routeID = _getRealRouteID(allBus["key"], idURL);
+
+      stopPosition.forEach((busStop) {
+        List<StopWithPosition> allStops = [];
+
+        busStop["Stops"].forEach((stop) {
+          String stopID = stop["StopID"];
+          Map<String, String> stopName = {
+            "zh_tw": stop["StopName"]["Zh_tw"],
+            "en": stop["StopName"]["En"],
+          };
+          List<double> position = [
+            stop["StopPosition"]["PositionLat"],
+            stop["StopPosition"]["PositionLon"]
+          ];
+
+          StopWithPosition buildStop = StopWithPosition(
+            id: stopID,
+            stopName: stopName,
+            position: position,
+            routeID: routeID,
+          );
+
+          allStops.add(buildStop);
+        });
+
+        for (var busRoute in busRoutes) {
+          if (busRoute.getRouteId == routeID) {
+            busAndStopPosition[busRoute] = allStops;
+            break;
+          }
+        }
+      });
     });
   }
 }

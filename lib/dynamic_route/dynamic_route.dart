@@ -160,7 +160,7 @@ class _DynamicRoute extends State<DynamicRoute> {
                 height: 15,
               ),
               SizedBox(
-                height: MediaQuery.of(context).size.height * 0.65,
+                height: MediaQuery.of(context).size.height * 0.64,
                 child: _comingSoon.isNotEmpty
                     ? ListView.builder(
                         shrinkWrap: true,

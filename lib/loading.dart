@@ -23,6 +23,7 @@ class _LoadingPageState extends State<LoadingPage> {
       onListen: () async {
         bool result = await RouteData.init();
         controller.add(result);
+        controller.close();
       },
     );
     return controller.stream;

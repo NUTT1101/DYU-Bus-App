@@ -4,6 +4,7 @@ import 'package:busapp/BusApp.dart';
 import 'package:busapp/bus_route_page.dart';
 import 'package:busapp/data/model/bus_route.dart';
 import 'package:busapp/data/model/stop.dart';
+import 'package:busapp/data/model/stop_with_position.dart';
 import 'package:busapp/data/position.dart';
 import 'package:busapp/data/route_data.dart';
 import 'package:flutter/material.dart';
@@ -65,9 +66,13 @@ class _NearbyStop extends State<NearbyStop> {
                 break;
             }
           }
-          streamController.add(1);
+
+          if (RouteData.busAndStopPosition.isNotEmpty) {
+            await Future<void>.delayed(const Duration(seconds: 5));
+          }
 
           getNearbyStops();
+          streamController.add(1);
 
           await streamController.close();
         },
@@ -103,9 +108,17 @@ class _NearbyStop extends State<NearbyStop> {
     }
 
     int now = BusApp.getNow().hour * 3600 + BusApp.getNow().minute * 60;
+
     for (var bus in RouteData.busRoutes) {
-      Stop? contain;
-      for (var stop in bus.getStops) {
+      StopWithPosition? contain;
+      var busStops;
+
+      if (RouteData.busAndStopPosition[bus] != null) {
+        busStops = RouteData.busAndStopPosition[bus];
+      } else
+        continue;
+
+      for (var stop in busStops) {
         if (stop.getStopName["zh_tw"]!.contains(search) ||
             (stop.getStopName["zh_tw"]!.contains("管院") &&
                 search.contains("大葉大學"))) {
@@ -116,7 +129,7 @@ class _NearbyStop extends State<NearbyStop> {
       }
 
       if (contain != null) {
-        for (var stop in bus.getStops) {
+        for (var stop in busStops) {
           List<double> stopPosition = stop.getPosition;
 
           double distance = BusAppPosition.calculateDistance(
@@ -130,9 +143,10 @@ class _NearbyStop extends State<NearbyStop> {
 
           if (distance < BusApp.nearbyDistance) {
             searchStatus = 1;
-            List<Stop> stops = (bus.getDirection == 0 && bus.getProvider)
-                ? bus.getStops.reversed.toList()
-                : bus.getStops;
+            List<StopWithPosition> stops =
+                (bus.getDirection == 0 && bus.getProvider)
+                    ? busStops.reversed.toList()
+                    : busStops;
 
             if (stops.indexOf(stop) < stops.indexOf(contain)) {
               var table = RouteData.rotueBarTimeTables[
