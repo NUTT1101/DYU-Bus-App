@@ -21,7 +21,8 @@ class RouteData {
   static late Map<String, List<Stop>> allRouteStops;
   static late Map<String, List<TimeTable>> totalTimeTables;
   static late List<BusRoute> busRoutes;
-  static late Map<BusRoute, List<StopWithPosition>> busAndStopPosition;
+  static late Map<String, List<StopWithPosition>> busAndStopPosition;
+  static late bool busAndStopPositionStatus;
   static late Map<String, Widget> rotueBarTimeTables;
   static late LocalStorage storage;
   static late LocalStorage searchLog;
@@ -29,13 +30,12 @@ class RouteData {
   static late StreamController<int> favoriteController;
   static late StreamController<int> filterController;
   static late StreamController<int> historyController;
-  static late List<SilderBarData> imageList;
+  static late List<SliderBarData> imageList;
   static late List<String> aboutInfo;
   static var allData;
   static late String ptxID;
   static late String ptxKey;
-
-  static String link = "http://www.ylbus.com.tw/bus_app_ylbus/route.json";
+  static late String g;
 
   static Future<bool> init() async {
     allBusName = [];
@@ -50,9 +50,10 @@ class RouteData {
     historyController = StreamController<int>.broadcast();
     imageList = [];
     aboutInfo = [];
+    busAndStopPositionStatus = false;
 
     await _getPtx();
-    allData = await getJsonFromURL(link);
+    allData = await getJsonFromURL(BusApp.busLink);
 
     var t1 = BusApp.getNow();
     await _buildAllBusName();
@@ -65,7 +66,7 @@ class RouteData {
     _buildStopWithPosition();
     var t2 = BusApp.getNow();
 
-    var g = ((t2.toUtc().microsecondsSinceEpoch -
+    g = ((t2.toUtc().microsecondsSinceEpoch -
                 t1.toUtc().microsecondsSinceEpoch) /
             1000000)
         .toStringAsFixed(2);
@@ -87,8 +88,15 @@ class RouteData {
   }
 
   static _buildAppData() async {
-    var data =
-        await getJsonFromURL("https://nutt1101.github.io/data/image.json");
+    if (aboutInfo.isNotEmpty) {
+      aboutInfo.clear();
+    }
+
+    if (imageList.isNotEmpty) {
+      aboutInfo.clear();
+    }
+
+    var data = await getJsonFromURL(BusApp.imageLink);
     if (data != null) {
       data["about_info"].forEach((value) {
         aboutInfo.add(value);
@@ -99,10 +107,30 @@ class RouteData {
         String imageLink = value["link"];
         String linkTitle = value["title"];
 
-        SilderBarData silderBarData =
-            SilderBarData(image, imageLink, linkTitle);
-        imageList.add(silderBarData);
+        imageList.add(
+          SliderBarData(
+            Image.network(
+              image,
+              height: 350,
+              fit: BoxFit.cover,
+            ),
+            imageLink,
+            linkTitle,
+          ),
+        );
       });
+    } else {
+      aboutInfo.add("訊息加載失敗，因為無法與伺服器取得連線。");
+      imageList.add(
+        SliderBarData(
+            Image.asset(
+              "assets/loading_failed.jpg",
+              height: 350,
+              fit: BoxFit.cover,
+            ),
+            "https://github.com/NUTT1101/DYU-Bus-App/issues",
+            "請回報開發者"),
+      );
     }
   }
 
@@ -160,6 +188,10 @@ class RouteData {
   }
 
   static Future<void> _buildAllBusName() async {
+    if (allBusName.isNotEmpty) {
+      allBusName.clear();
+    }
+
     allData.forEach((element) {
       if (!allBusName.contains(element["name"]["Zh"])) {
         allBusName.add(element["name"]["Zh"]);
@@ -181,21 +213,21 @@ class RouteData {
         stops[0]["Timetables"].forEach((timeTable) {
           List<Stop> allStops = [];
 
-          timeTable["StopTimes"].forEach((stop) {
-            String stopID = stop["StopID"];
-            Map<String, String> stopName = {
-              "zh_tw": stop["StopName"]["Zh_tw"],
-              "en": stop["StopName"]["En"],
-            };
+          timeTable["StopTimes"].forEach(
+            (stop) {
+              String stopID = stop["StopID"];
+              Map<String, String> stopName = {
+                "zh_tw": stop["StopName"]["Zh_tw"],
+                "en": stop["StopName"]["En"],
+              };
 
-            Stop buildStop = Stop(
-              id: stopID,
-              stopName: stopName,
-              routeID: routeID,
-            );
-
-            allStops.add(buildStop);
-          });
+              allStops.add(Stop(
+                id: stopID,
+                stopName: stopName,
+                routeID: routeID,
+              ));
+            },
+          );
 
           allRouteStops[routeID] = allStops;
         });
@@ -292,6 +324,10 @@ class RouteData {
   }
 
   static Future<void> _buildRoutes() async {
+    if (busRoutes.isNotEmpty) {
+      busRoutes.clear();
+    }
+
     await Future.forEach(allData, (data) {
       data as Map<String, dynamic>;
 
@@ -317,16 +353,18 @@ class RouteData {
 
       String ticket = data["url"]["ticket"];
 
-      busRoutes.add(BusRoute(
-        id: routeID,
-        routeName: routeName,
-        subtitle: subtitle,
-        direction: direction,
-        timeTables: totalTimeTables[timeTableID]!,
-        stops: allRouteStops[routeID]!,
-        provider: provider,
-        ticket: ticket,
-      ));
+      busRoutes.add(
+        BusRoute(
+          id: routeID,
+          routeName: routeName,
+          subtitle: subtitle,
+          direction: direction,
+          timeTables: totalTimeTables[timeTableID]!,
+          stops: allRouteStops[routeID]!,
+          provider: provider,
+          ticket: ticket,
+        ),
+      );
     });
   }
 
@@ -473,23 +511,24 @@ class RouteData {
             stop["StopPosition"]["PositionLon"]
           ];
 
-          StopWithPosition buildStop = StopWithPosition(
-            id: stopID,
-            stopName: stopName,
-            position: position,
-            routeID: routeID,
+          allStops.add(
+            StopWithPosition(
+              id: stopID,
+              stopName: stopName,
+              position: position,
+              routeID: routeID,
+            ),
           );
-
-          allStops.add(buildStop);
         });
 
-        for (var busRoute in busRoutes) {
-          if (busRoute.getRouteId == routeID) {
-            busAndStopPosition[busRoute] = allStops;
-            break;
+        for (var bus in busRoutes) {
+          if (bus.getRouteId == routeID) {
+            busAndStopPosition[bus.getRouteId + bus.getSubtitle["zh_tw"]!] =
+                allStops;
           }
         }
       });
     });
+    busAndStopPositionStatus = true;
   }
 }

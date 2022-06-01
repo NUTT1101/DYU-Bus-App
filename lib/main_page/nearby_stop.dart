@@ -7,6 +7,7 @@ import 'package:busapp/data/model/stop.dart';
 import 'package:busapp/data/model/stop_with_position.dart';
 import 'package:busapp/data/position.dart';
 import 'package:busapp/data/route_data.dart';
+import 'package:busapp/loading.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -67,8 +68,11 @@ class _NearbyStop extends State<NearbyStop> {
             }
           }
 
-          if (RouteData.busAndStopPosition.isNotEmpty) {
-            await Future<void>.delayed(const Duration(seconds: 5));
+          for (;;) {
+            if (RouteData.busAndStopPositionStatus) {
+              break;
+            }
+            await Future<void>.delayed(const Duration(seconds: 1));
           }
 
           getNearbyStops();
@@ -86,12 +90,9 @@ class _NearbyStop extends State<NearbyStop> {
     if (search.contains("站")) {
       search = search.replaceAll("站", "");
     }
+
     if (search == "大葉") {
       search = "大葉大學";
-    }
-
-    if (search == "彰化") {
-      search = "彰化站";
     }
   }
 
@@ -111,25 +112,32 @@ class _NearbyStop extends State<NearbyStop> {
 
     for (var bus in RouteData.busRoutes) {
       StopWithPosition? contain;
-      var busStops;
 
-      if (RouteData.busAndStopPosition[bus] != null) {
-        busStops = RouteData.busAndStopPosition[bus];
-      } else
+      late List<StopWithPosition> stopWithPosition;
+
+      if (RouteData
+              .busAndStopPosition[bus.getRouteId + bus.getSubtitle["zh_tw"]!] !=
+          null) {
+        stopWithPosition = RouteData
+            .busAndStopPosition[bus.getRouteId + bus.getSubtitle["zh_tw"]!]!;
+      } else {
         continue;
+      }
 
-      for (var stop in busStops) {
+      for (var stop in stopWithPosition) {
         if (stop.getStopName["zh_tw"]!.contains(search) ||
             (stop.getStopName["zh_tw"]!.contains("管院") &&
                 search.contains("大葉大學"))) {
-          contain = stop;
+          if (!(search == "彰化" && stop.getStopName["zh_tw"]!.contains("高鐵"))) {
+            contain = stop;
+          }
 
           break;
         }
       }
 
       if (contain != null) {
-        for (var stop in busStops) {
+        for (var stop in stopWithPosition) {
           List<double> stopPosition = stop.getPosition;
 
           double distance = BusAppPosition.calculateDistance(
@@ -145,8 +153,8 @@ class _NearbyStop extends State<NearbyStop> {
             searchStatus = 1;
             List<StopWithPosition> stops =
                 (bus.getDirection == 0 && bus.getProvider)
-                    ? busStops.reversed.toList()
-                    : busStops;
+                    ? stopWithPosition.reversed.toList()
+                    : stopWithPosition;
 
             if (stops.indexOf(stop) < stops.indexOf(contain)) {
               var table = RouteData.rotueBarTimeTables[
@@ -168,15 +176,15 @@ class _NearbyStop extends State<NearbyStop> {
                   continue;
                 }
 
-                NearbyWidget nearbyWidget = NearbyWidget(
-                  bus: bus,
-                  stopName: stop.getStopName["zh_tw"]!,
-                  decStopName: contain.getStopName["zh_tw"]!,
-                  distance: distance,
-                  arrTime: arrTimeStringFormat,
+                nearbyStops.add(
+                  NearbyWidget(
+                    bus: bus,
+                    stopName: stop.getStopName["zh_tw"]!,
+                    decStopName: contain.getStopName["zh_tw"]!,
+                    distance: distance,
+                    arrTime: arrTimeStringFormat,
+                  ),
                 );
-
-                nearbyStops.add(nearbyWidget);
               }
             }
           }
@@ -189,9 +197,11 @@ class _NearbyStop extends State<NearbyStop> {
       return;
     }
 
-    nearbyStops.sort(((a, b) {
-      return (a.distance > b.distance ? 1 : 0);
-    }));
+    nearbyStops.sort(
+      ((a, b) {
+        return (a.distance > b.distance ? 1 : 0);
+      }),
+    );
   }
 
   String _getContent() {
@@ -221,13 +231,13 @@ class _NearbyStop extends State<NearbyStop> {
         );
       case 1:
         return Text(
-          "找不到有關於 \" $searchValue \" 的目的地。",
+          "此時間點沒有公車會經過 \" $searchValue \"",
           style: TextStyle(
             fontSize: 20,
           ),
         );
     }
-    return Text("");
+    return Text("發生未知的錯誤，請回報給開發人員。");
   }
 
   @override
@@ -235,6 +245,12 @@ class _NearbyStop extends State<NearbyStop> {
     return StreamBuilder<int>(
       stream: positionStream,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(snapshot.error.toString()),
+          );
+        }
+
         if (snapshot.hasData) {
           return (nearbyStops.isEmpty
               ? Center(
@@ -262,46 +278,12 @@ class _NearbyStop extends State<NearbyStop> {
                     ),
                   ),
                 ));
-        }
-
-        if (snapshot.hasError) {
+        } else {
           return Center(
-            child: Text(snapshot.error.toString()),
+            child: LoadingWidget(
+              text: "GPS資訊取得中...",
+            ),
           );
-        }
-
-        switch (snapshot.connectionState) {
-          case ConnectionState.none:
-            return Container(
-              child: Text("none"),
-            );
-
-          case ConnectionState.waiting:
-            return Center(
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 300,
-                  ),
-                  CircularProgressIndicator(
-                    color: BusApp.mainColor,
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  Text("GPS資訊取得中..."),
-                ],
-              ),
-            );
-
-          case ConnectionState.active:
-            return Container(
-              child: Text("active"),
-            );
-          case ConnectionState.done:
-            return Container(
-              child: Text("done"),
-            );
         }
       },
     );

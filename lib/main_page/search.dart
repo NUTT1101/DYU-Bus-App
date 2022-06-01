@@ -30,8 +30,8 @@ class SearchBar extends StatelessWidget {
             Expanded(
               child: TextField(
                 onSubmitted: ((value) {
+                  value = value.trim();
                   if (value.isNotEmpty) {
-                    value = value.trim();
                     List<dynamic> history =
                         RouteData.searchLog.getItem("log") == null
                             ? []

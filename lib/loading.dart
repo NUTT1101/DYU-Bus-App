@@ -70,8 +70,10 @@ class _LoadingPageState extends State<LoadingPage> {
 }
 
 class LoadingWidget extends StatelessWidget {
-  const LoadingWidget({Key? key, this.space = 25}) : super(key: key);
+  const LoadingWidget({Key? key, this.space = 25, this.text = BusApp.loading})
+      : super(key: key);
 
+  final String text;
   final double space;
 
   @override
@@ -85,7 +87,7 @@ class LoadingWidget extends StatelessWidget {
         SizedBox(
           height: space,
         ),
-        Text(BusApp.loading)
+        Text(text)
       ],
     );
   }

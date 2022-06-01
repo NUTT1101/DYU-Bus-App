@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class BusApp {
+  static String busLink = "http://www.ylbus.com.tw/bus_app_ylbus/route.json";
+  static String imageLink = "https://nutt1101.github.io/data/image.json";
   static int currentPage = 0; // default page is 0 (main page)
   static double nearbyDistance = 1.0;
   static int initWeekday = getWeekday();

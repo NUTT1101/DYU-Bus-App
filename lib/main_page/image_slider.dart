@@ -20,12 +20,12 @@ class _ImageSlider extends State<ImageSlider> {
       child: Column(
         children: [
           CarouselSlider.builder(
-              itemCount: RouteData.imageList.length,
-              itemBuilder: (context, itemIndex, pageViewIndex) {
-                return Column(
-                  children: [
-                    Expanded(
-                        child: ClipRRect(
+            itemCount: RouteData.imageList.length,
+            itemBuilder: (context, itemIndex, pageViewIndex) {
+              return Column(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
                       borderRadius: BorderRadius.circular(25),
                       child: Stack(
                         fit: StackFit.expand,
@@ -36,10 +36,11 @@ class _ImageSlider extends State<ImageSlider> {
                               MaterialPageRoute(
                                 builder: (context) => Scaffold(
                                   appBar: App(
-                                      title: RouteData
-                                          .imageList[itemIndex].linkTitle,
-                                      header: Text(""),
-                                      footer: Text("")),
+                                    title: RouteData
+                                        .imageList[itemIndex].linkTitle,
+                                    header: Text(""),
+                                    footer: Text(""),
+                                  ),
                                   body: WebViewPage(
                                     url: RouteData
                                         .imageList[itemIndex].imageLink,
@@ -47,11 +48,7 @@ class _ImageSlider extends State<ImageSlider> {
                                 ),
                               ),
                             ),
-                            child: Image.network(
-                              RouteData.imageList[itemIndex].image,
-                              height: 350,
-                              fit: BoxFit.cover,
-                            ),
+                            child: RouteData.imageList[itemIndex].image,
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -74,19 +71,21 @@ class _ImageSlider extends State<ImageSlider> {
                           )
                         ],
                       ),
-                    ))
-                  ],
-                );
-              },
-              options: CarouselOptions(
-                  autoPlay: true,
-                  viewportFraction: 1,
-                  enlargeCenterPage: true,
-                  onPageChanged: (index, reson) {
-                    setState(() {
-                      currentPage = index;
-                    });
-                  })),
+                    ),
+                  )
+                ],
+              );
+            },
+            options: CarouselOptions(
+                autoPlay: true,
+                viewportFraction: 1,
+                enlargeCenterPage: true,
+                onPageChanged: (index, reson) {
+                  setState(() {
+                    currentPage = index;
+                  });
+                }),
+          ),
         ],
       ),
     );

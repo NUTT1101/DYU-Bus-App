@@ -25,11 +25,12 @@ class _Filter extends State<Filter> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Title(
-          color: BusApp.mainColor,
-          child: const Text(
-            BusApp.filterTitle,
-            style: TextStyle(fontSize: 25),
-          )),
+        color: BusApp.mainColor,
+        child: const Text(
+          BusApp.filterTitle,
+          style: TextStyle(fontSize: 25),
+        ),
+      ),
       content: SizedBox(
         height: MediaQuery.of(context).size.height * 0.4,
         width: double.maxFinite,

@@ -59,11 +59,10 @@ flutter_icons:
 # The following section is specific to Flutter.
 flutter:
   assets:
-    - assets/image/1.png
     - assets/image/2.png
-    - assets/image/3.png
     - assets/busapp_icon_gray.png
     - assets/data/bus/ptx.json
+    - assets/loading_failed.jpg
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

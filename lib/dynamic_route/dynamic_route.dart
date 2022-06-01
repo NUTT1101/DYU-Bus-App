@@ -36,9 +36,24 @@ class _DynamicRoute extends State<DynamicRoute> {
 
         // update
         if (BusApp.initWeekday != BusApp.getWeekday()) {
-          RouteData.buildColumnAndRow();
           BusApp.initWeekday = BusApp.getWeekday();
           _date = _getDate(_now);
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text("建議您重啟App以抓取今天的公車資訊"),
+              actions: [
+                TextButton(
+                  style: ButtonStyle(
+                    foregroundColor:
+                        MaterialStateProperty.all(BusApp.mainColor),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(BusApp.acceptButton),
+                )
+              ],
+            ),
+          );
         }
       });
     });

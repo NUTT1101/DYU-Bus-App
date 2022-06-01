@@ -42,8 +42,9 @@ class History extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-            border: Border.all(width: 2),
-            borderRadius: BorderRadius.circular(20)),
+          border: Border.all(width: 2),
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
