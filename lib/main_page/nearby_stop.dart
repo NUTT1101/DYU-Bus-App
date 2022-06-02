@@ -124,6 +124,10 @@ class _NearbyStop extends State<NearbyStop> {
         continue;
       }
 
+      stopWithPosition = (bus.getDirection == 0 && bus.getProvider)
+          ? stopWithPosition.reversed.toList()
+          : stopWithPosition;
+
       for (var stop in stopWithPosition) {
         if (stop.getStopName["zh_tw"]!.contains(search) ||
             (stop.getStopName["zh_tw"]!.contains("管院") &&
@@ -131,8 +135,6 @@ class _NearbyStop extends State<NearbyStop> {
           if (!(search == "彰化" && stop.getStopName["zh_tw"]!.contains("高鐵"))) {
             contain = stop;
           }
-
-          break;
         }
       }
 
@@ -151,10 +153,7 @@ class _NearbyStop extends State<NearbyStop> {
 
           if (distance < BusApp.nearbyDistance) {
             searchStatus = 1;
-            List<StopWithPosition> stops =
-                (bus.getDirection == 0 && bus.getProvider)
-                    ? stopWithPosition.reversed.toList()
-                    : stopWithPosition;
+            List<StopWithPosition> stops = stopWithPosition;
 
             if (stops.indexOf(stop) < stops.indexOf(contain)) {
               var table = RouteData.rotueBarTimeTables[
@@ -176,15 +175,24 @@ class _NearbyStop extends State<NearbyStop> {
                   continue;
                 }
 
-                nearbyStops.add(
-                  NearbyWidget(
-                    bus: bus,
-                    stopName: stop.getStopName["zh_tw"]!,
-                    decStopName: contain.getStopName["zh_tw"]!,
-                    distance: distance,
-                    arrTime: arrTimeStringFormat,
-                  ),
-                );
+                bool repeat = false;
+                for (var nstop in nearbyStops) {
+                  if (nstop.bus == bus) {
+                    repeat = !repeat;
+                  }
+                }
+
+                if (!repeat) {
+                  nearbyStops.add(
+                    NearbyWidget(
+                      bus: bus,
+                      stopName: stop.getStopName["zh_tw"]!,
+                      decStopName: contain.getStopName["zh_tw"]!,
+                      distance: distance,
+                      arrTime: arrTimeStringFormat,
+                    ),
+                  );
+                }
               }
             }
           }
@@ -199,7 +207,7 @@ class _NearbyStop extends State<NearbyStop> {
 
     nearbyStops.sort(
       ((a, b) {
-        return (a.distance > b.distance ? 1 : 0);
+        return (a.distance > b.distance ? 1 : -1);
       }),
     );
   }

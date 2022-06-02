@@ -47,4 +47,5 @@ ios/
 android/
 .vscode/
 .metadata
+obfuscate/
 
