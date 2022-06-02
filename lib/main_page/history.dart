@@ -38,7 +38,6 @@ class History extends StatelessWidget {
           ),
         ),
       ),
-      splashColor: BusApp.splashColor,
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
@@ -139,7 +138,6 @@ class HistoryBar extends StatelessWidget {
         borderRadius: const BorderRadius.all(Radius.circular(12)),
       ),
       child: InkWell(
-        splashColor: BusApp.splashColor,
         borderRadius: const BorderRadius.all(Radius.circular(12)),
         onTap: () {
           Navigator.push(

@@ -26,7 +26,6 @@ class RouteBar extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        splashColor: BusApp.splashColor,
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(

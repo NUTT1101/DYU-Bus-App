@@ -340,7 +340,6 @@ class _NearbyWidgetState extends State<NearbyWidget> {
               ),
             ),
           ),
-          splashColor: BusApp.splashColor,
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.only(top: 10, bottom: 10),

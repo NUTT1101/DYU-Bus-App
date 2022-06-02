@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
 class BusApp {
-  static String busLink = "http://www.ylbus.com.tw/bus_app_ylbus/route.json";
-  static String imageLink = "https://nutt1101.github.io/data/image.json";
+  static const String busLink =
+      "http://www.ylbus.com.tw/bus_app_ylbus/route.json";
+  static const String imageLink = "https://nutt1101.github.io/data/image.json";
   static int currentPage = 0; // default page is 0 (main page)
-  static double nearbyDistance = 1.0;
+  static const double nearbyDistance = 1.0;
   static int initWeekday = getWeekday();
   static String year = getNow().year.toString();
-  static const String appName = "張顧耀老師很帥";
+  static const String appName = "GO大葉";
   static const String mainPage = "首頁";
   static const String dynamicRoutes = "到站資訊";
   static const String allRoutes = "全班次表";

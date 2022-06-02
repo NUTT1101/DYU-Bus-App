@@ -43,7 +43,6 @@ class _Favorite extends State<Favorite> {
           ),
         ),
       ),
-      splashColor: BusApp.splashColor,
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
