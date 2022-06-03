@@ -473,14 +473,14 @@ class RouteData {
       }
     }
 
-    return dataColumns.isNotEmpty
-        ? DataTable(columns: dataColumns, rows: rows)
-        : const Center(
+    return dataColumns.isEmpty || rows.isEmpty
+        ? const Center(
             child: Text(
               BusApp.notToday,
               style: TextStyle(fontSize: 23),
             ),
-          );
+          )
+        : DataTable(columns: dataColumns, rows: rows);
   }
 
   static buildColumnAndRow() async {
