@@ -210,52 +210,59 @@ class RouteData {
       if (url.contains("http://www.ylbus.com.tw/")) {
         stops = await getJsonFromURL(url);
 
-        stops[0]["Timetables"].forEach((timeTable) {
-          List<Stop> allStops = [];
+        if (stops[0]["Timetables"].isEmpty || stops[0]["Timetables"] == null) {
+          allRouteStops[routeID] = [];
+        } else {
+          stops[0]["Timetables"].forEach((timeTable) {
+            List<Stop> allStops = [];
 
-          timeTable["StopTimes"].forEach(
-            (stop) {
-              String stopID = stop["StopID"];
-              Map<String, String> stopName = {
-                "zh_tw": stop["StopName"]["Zh_tw"],
-                "en": stop["StopName"]["En"],
-              };
+            timeTable["StopTimes"].forEach(
+              (stop) {
+                String stopID = stop["StopID"];
+                Map<String, String> stopName = {
+                  "zh_tw": stop["StopName"]["Zh_tw"],
+                  "en": stop["StopName"]["En"],
+                };
 
-              allStops.add(Stop(
-                id: stopID,
-                stopName: stopName,
-                routeID: routeID,
-              ));
-            },
-          );
+                allStops.add(Stop(
+                  id: stopID,
+                  stopName: stopName,
+                  routeID: routeID,
+                ));
+              },
+            );
 
-          allRouteStops[routeID] = allStops;
-        });
+            allRouteStops[routeID] = allStops;
+          });
+        }
       } else {
         url = allBus["url"]["est_time"];
         stops = await getJsonFromURL(url, headers: _getSignature());
 
+        if (stops.toString() == "{message: API rate limit exceeded}") {
+          return;
+        }
+
         List<Stop> allStops = [];
-        stops.forEach((stop) {
-          Map<String, String> stopName = {
-            "zh_tw": stop["StopName"]["Zh_tw"],
-            "en": stop["StopName"]["En"],
-          };
+        if (stops == null || stops.isEmpty) {
+          allRouteStops[routeID] = [];
+        } else {
+          stops.forEach((stop) {
+            Map<String, String> stopName = {
+              "zh_tw": stop["StopName"]["Zh_tw"],
+              "en": stop["StopName"]["En"],
+            };
 
-          Stop buildStop = Stop(
-            id: "",
-            stopName: stopName,
-            routeID: routeID,
-          );
+            Stop buildStop = Stop(
+              id: "",
+              stopName: stopName,
+              routeID: routeID,
+            );
 
-          allStops.add(buildStop);
-        });
-        allRouteStops[routeID] = allStops;
-      }
-
-      if (stops.toString() == "{message: API rate limit exceeded}") {
-        // ptx 平台請求上限滿了
-        return;
+            allStops.add(buildStop);
+          });
+          allRouteStops[routeID] = allStops;
+        }
       }
     });
   }
@@ -270,47 +277,57 @@ class RouteData {
       if (url.contains("http://www.ylbus.com.tw/")) {
         String routeName = routeTimeTables[0]["RouteUID"];
 
-        routeTimeTables[0]["Timetables"].forEach((timeTable) {
-          List<bool> serviceDay = [];
+        var timeTables = routeTimeTables[0]["Timetables"];
 
-          timeTable["ServiceDay"].forEach((key, value) {
-            serviceDay.add(value == 1);
+        if (timeTables.isEmpty || timeTables == null) {
+          totalTimeTables[routeName] = [];
+        } else {
+          timeTables.forEach((timeTable) {
+            List<bool> serviceDay = [];
+
+            timeTable["ServiceDay"].forEach((key, value) {
+              serviceDay.add(value == 1);
+            });
+
+            timeTable["StopTimes"].forEach((stopTime) {
+              String arrTime = stopTime["ArrivalTime"];
+              String depTime = stopTime["DepartureTime"];
+
+              allTimeTables.add(TimeTable(
+                serviceDay: serviceDay,
+                arrivalTime: arrTime,
+                departureTime: depTime,
+              ));
+            });
+
+            totalTimeTables[routeName] = allTimeTables;
           });
-
-          timeTable["StopTimes"].forEach((stopTime) {
-            String arrTime = stopTime["ArrivalTime"];
-            String depTime = stopTime["DepartureTime"];
-
-            allTimeTables.add(TimeTable(
-              serviceDay: serviceDay,
-              arrivalTime: arrTime,
-              departureTime: depTime,
-            ));
-          });
-
-          totalTimeTables[routeName] = allTimeTables;
-        });
+        }
       } else {
         String routeID =
             url.split("/")[url.split("/").length - 1].replaceAll(".json", "");
 
-        routeTimeTables.forEach((timeTable) {
-          List<bool> serviceDay = [];
+        if (routeTimeTables.isEmpty || routeTimeTables == null) {
+          totalTimeTables[routeID] = [];
+        } else {
+          routeTimeTables.forEach((timeTable) {
+            List<bool> serviceDay = [];
 
-          timeTable["ServiceDay"].forEach((key, value) {
-            serviceDay.add(value == 1);
+            timeTable["ServiceDay"].forEach((key, value) {
+              serviceDay.add(value == 1);
+            });
+
+            String arrTime = timeTable["Middle_Station"][0]["ArrivalTime"];
+
+            allTimeTables.add(TimeTable(
+              serviceDay: serviceDay,
+              arrivalTime: arrTime,
+              departureTime: "0",
+            ));
           });
 
-          String arrTime = timeTable["Middle_Station"][0]["ArrivalTime"];
-
-          allTimeTables.add(TimeTable(
-            serviceDay: serviceDay,
-            arrivalTime: arrTime,
-            departureTime: "0",
-          ));
-        });
-
-        totalTimeTables[routeID] = allTimeTables;
+          totalTimeTables[routeID] = allTimeTables;
+        }
       }
     });
   }
@@ -456,16 +473,14 @@ class RouteData {
       }
     }
 
-    DataTable table = DataTable(columns: dataColumns, rows: rows);
-
-    return table.rows.isEmpty
-        ? const Center(
+    return dataColumns.isNotEmpty
+        ? DataTable(columns: dataColumns, rows: rows)
+        : const Center(
             child: Text(
               BusApp.notToday,
               style: TextStyle(fontSize: 23),
             ),
-          )
-        : table;
+          );
   }
 
   static buildColumnAndRow() async {

@@ -124,15 +124,15 @@ class _NearbyStop extends State<NearbyStop> {
         continue;
       }
 
-      stopWithPosition = (bus.getDirection == 0 && bus.getProvider)
-          ? stopWithPosition.reversed.toList()
-          : stopWithPosition;
-
       for (var stop in stopWithPosition) {
         if (stop.getStopName["zh_tw"]!.contains(search) ||
             (stop.getStopName["zh_tw"]!.contains("管院") &&
                 search.contains("大葉大學"))) {
           if (!(search == "彰化" && stop.getStopName["zh_tw"]!.contains("高鐵"))) {
+            if (stop.getStopName["zh_tw"]! == search) {
+              contain = stop;
+              break;
+            }
             contain = stop;
           }
         }
@@ -153,7 +153,11 @@ class _NearbyStop extends State<NearbyStop> {
 
           if (distance < BusApp.nearbyDistance) {
             searchStatus = 1;
-            List<StopWithPosition> stops = stopWithPosition;
+            List<StopWithPosition> stops = stopWithPosition =
+                (bus.getDirection == 0 && bus.getProvider)
+                    ? stopWithPosition.reversed.toList()
+                    : stopWithPosition;
+            ;
 
             if (stops.indexOf(stop) < stops.indexOf(contain)) {
               var table = RouteData.rotueBarTimeTables[
