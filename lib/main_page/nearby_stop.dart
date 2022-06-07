@@ -10,6 +10,8 @@ import 'package:busapp/data/route_data.dart';
 import 'package:busapp/loading.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class NearbyStop extends StatefulWidget {
   NearbyStop({Key? key, required this.searchValue}) : super(key: key);
@@ -194,6 +196,8 @@ class _NearbyStop extends State<NearbyStop> {
                       decStopName: contain.getStopName["zh_tw"]!,
                       distance: distance,
                       arrTime: arrTimeStringFormat,
+                      lat: stop.getPosition[0],
+                      lon: stop.getPosition[1],
                     ),
                   );
                 }
@@ -310,6 +314,8 @@ class NearbyWidget extends StatefulWidget {
     required this.decStopName,
     required this.distance,
     required this.arrTime,
+    required this.lat,
+    required this.lon,
   }) : super(key: key);
 
   final BusRoute bus;
@@ -317,6 +323,8 @@ class NearbyWidget extends StatefulWidget {
   final String decStopName;
   final double distance;
   final String arrTime;
+  final double lat;
+  final double lon;
 
   @override
   State<NearbyWidget> createState() => _NearbyWidgetState();
@@ -336,14 +344,31 @@ class _NearbyWidgetState extends State<NearbyWidget> {
           borderRadius: BorderRadius.all(Radius.circular(12)),
         ),
         child: InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => BusRoutePage(
-                thisPageBusRoute: widget.bus,
-              ),
-            ),
-          ),
+          onTap: () async {
+            String url =
+                "google.navigation:q=${widget.lat},${widget.lon}&mode=w";
+
+            if (await canLaunchUrlString(url)) {
+              await launchUrlString(url);
+            } else {
+              showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text("無法開啟"),
+                      actions: [
+                        TextButton(
+                          style: ButtonStyle(
+                              foregroundColor:
+                                  MaterialStateProperty.all(Colors.black)),
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(BusApp.acceptButton),
+                        )
+                      ],
+                    );
+                  });
+            }
+          },
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.only(top: 10, bottom: 10),

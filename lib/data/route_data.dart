@@ -512,37 +512,39 @@ class RouteData {
       String idURL = allBus["url"]["first_time_table"];
       String routeID = _getRealRouteID(allBus["key"], idURL);
 
-      stopPosition.forEach((busStop) {
-        List<StopWithPosition> allStops = [];
+      if (stopPosition != null) {
+        stopPosition.forEach((busStop) {
+          List<StopWithPosition> allStops = [];
 
-        busStop["Stops"].forEach((stop) {
-          String stopID = stop["StopID"];
-          Map<String, String> stopName = {
-            "zh_tw": stop["StopName"]["Zh_tw"],
-            "en": stop["StopName"]["En"],
-          };
-          List<double> position = [
-            stop["StopPosition"]["PositionLat"],
-            stop["StopPosition"]["PositionLon"]
-          ];
+          busStop["Stops"].forEach((stop) {
+            String stopID = stop["StopID"];
+            Map<String, String> stopName = {
+              "zh_tw": stop["StopName"]["Zh_tw"],
+              "en": stop["StopName"]["En"],
+            };
+            List<double> position = [
+              stop["StopPosition"]["PositionLat"],
+              stop["StopPosition"]["PositionLon"]
+            ];
 
-          allStops.add(
-            StopWithPosition(
-              id: stopID,
-              stopName: stopName,
-              position: position,
-              routeID: routeID,
-            ),
-          );
-        });
+            allStops.add(
+              StopWithPosition(
+                id: stopID,
+                stopName: stopName,
+                position: position,
+                routeID: routeID,
+              ),
+            );
+          });
 
-        for (var bus in busRoutes) {
-          if (bus.getRouteId == routeID) {
-            busAndStopPosition[bus.getRouteId + bus.getSubtitle["zh_tw"]!] =
-                allStops;
+          for (var bus in busRoutes) {
+            if (bus.getRouteId == routeID) {
+              busAndStopPosition[bus.getRouteId + bus.getSubtitle["zh_tw"]!] =
+                  allStops;
+            }
           }
-        }
-      });
+        });
+      }
     });
     busAndStopPositionStatus = true;
   }
