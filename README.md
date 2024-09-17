@@ -20,8 +20,6 @@
     - [v7a架構(一般手機請安裝這個版本)](https://github.com/NUTT1101/DYU-Bus-App/releases/download/v1.0.0/app-armeabi-v7a-release.apk.zip)
     - [v8a架構(v7a裝不了請試試看這個)](https://github.com/NUTT1101/DYU-Bus-App/releases/download/v1.0.0/app-arm64-v8a-release.apk.zip)
     - [x86架構(平板、手機模擬器)](https://github.com/NUTT1101/DYU-Bus-App/releases/download/v1.0.0/app-x86_64-release.apk.zip)
-- IOS
-    - 由於限制，只能你拿手機我當面幫你灌了...
 
 開發技術:
 - Dart Language
